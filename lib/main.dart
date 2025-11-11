@@ -1,6 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:attendance_app/ui/home_screen.dart';
+import 'package:attendance_app/absent/absent_screen.dart';
+import 'package:attendance_app/attend/attend_screen.dart';
+import 'package:attendance_app/attendance_history/attendance_history_screen.dart';
 
 
 Future<void> main() async {
@@ -35,7 +38,8 @@ class TestApp extends StatelessWidget {
   @override // can give information about about your missing override code
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // remove debug banner 
+      debugShowCheckedModeBanner: false, // remove debug banner
+      home: const HomeScreen(), // HomeScreen class
     );
   }
 }
