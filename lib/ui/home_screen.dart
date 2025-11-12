@@ -1,3 +1,6 @@
+import 'package:attendance_app/absent/absent_screen.dart';
+import 'package:attendance_app/attend/attend_screen.dart';
+import 'package:attendance_app/attendance_history/attendance_history_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -40,7 +43,7 @@ class HomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                          builder: (context) => const AttendScreen(),
                         ),
                       );
                     },
@@ -71,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                          builder: (context) => const AbsentScreen(),
                         ),
                       );
                     },
@@ -102,7 +105,7 @@ class HomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                          builder: (context) => const AttendanceHistoryScreen(),
                         ),
                       );
                     },
@@ -137,7 +140,7 @@ class HomeScreen extends StatelessWidget {
                 backgroundColor: Colors.blueAccent,
                 centerTitle: true,
                 title: const Text(
-                  "IDN Boarding School Solo",
+                  "Made With Flutter",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
