@@ -29,6 +29,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  // Function to show "in progress" notification
+  void _showInProgressNotification() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.build, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text(
+              "Fitur sedang dalam pengerjaan",
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        backgroundColor: Color(0xFF4CAF50),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.only(top: 70, bottom: 30, left: 20, right: 20),
@@ -97,11 +119,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildMenuTile({
+  Widget _buildSmallMenuTile({
     required String title,
     required IconData icon,
     required Color color,
-    required Widget targetScreen,
+    required VoidCallback onTap,
     required double delayFactor,
   }) {
     final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -121,84 +143,71 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return FadeTransition(
           opacity: animation,
           child: Transform.translate(
-            offset: Offset(0, (1 - animation.value) * 50), // Remove rotation, keep vertical animation only
+            offset: Offset(0, (1 - animation.value) * 30),
             child: child,
           ),
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 20), // Added horizontal margin
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          elevation: 15,
-          shadowColor: color.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20),
+          elevation: 10,
+          shadowColor: color.withOpacity(0.2),
           child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(25),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
             child: Container(
-              padding: const EdgeInsets.all(25),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: color.withOpacity(0.1), width: 1),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 80, // Slightly larger for better visual
-                    height: 80,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
                           color,
                           Color.lerp(color, Colors.white, 0.3)!,
                         ],
-                        begin: Alignment.topCenter, // Changed to top center for consistent gradient
+                        begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: color.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          color: color.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: Icon(
                       icon,
                       color: Colors.white,
-                      size: 36, // Slightly larger icon
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 20), // Increased spacing
+                  const SizedBox(height: 12),
                   Text(
                     title,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 18, // Slightly larger font
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: color,
                     ),
                   ),
-                  const SizedBox(height: 12), // Added spacing
+                  const SizedBox(height: 8),
                   Container(
-                    width: 40, // Wider line
-                    height: 4,
+                    width: 25,
+                    height: 3,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [color, color.withOpacity(0.5)],
@@ -224,42 +233,141 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           _buildHeader(),
           
           Expanded(
-            child: ListView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 20), // Added vertical padding
-              children: [
-                const SizedBox(height: 10), // Added top spacing
-                
-                _buildMenuTile(
-                  title: "Attendance Check-In",
-                  icon: Icons.fingerprint,
-                  color: const Color(0xFF2196F3),
-                  targetScreen: const AttendScreen(),
-                  delayFactor: 1.0,
-                ),
-                
-                const SizedBox(height: 15), // Added spacing between tiles
-                
-                _buildMenuTile(
-                  title: "Permission Request",
-                  icon: Icons.assignment_turned_in,
-                  color: const Color(0xFF9C27B0),
-                  targetScreen: const AbsentScreen(),
-                  delayFactor: 2.0,
-                ),
-                
-                const SizedBox(height: 15), // Added spacing between tiles
-                
-                _buildMenuTile(
-                  title: "Attendance History",
-                  icon: Icons.history,
-                  color: const Color(0xFF673AB7),
-                  targetScreen: const AttendanceHistoryScreen(),
-                  delayFactor: 3.0,
-                ),
-                
-                const SizedBox(height: 10), // Added bottom spacing
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Row 1: Two buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSmallMenuTile(
+                          title: "Attendance\nCheck-In",
+                          icon: Icons.fingerprint,
+                          color: const Color(0xFF2196F3),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => const AttendScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          delayFactor: 1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSmallMenuTile(
+                          title: "Permission\nRequest",
+                          icon: Icons.assignment_turned_in,
+                          color: const Color(0xFF9C27B0),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => const AbsentScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          delayFactor: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Row 2: Two buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSmallMenuTile(
+                          title: "Attendance\nHistory",
+                          icon: Icons.history,
+                          color: const Color(0xFF673AB7),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => const AttendanceHistoryScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          delayFactor: 2.0,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSmallMenuTile(
+                          title: "Coming\nSoon",
+                          icon: Icons.more_horiz,
+                          color: const Color(0xFF4CAF50),
+                          onTap: _showInProgressNotification,
+                          delayFactor: 2.5,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Spacer to push content to center
+                  const SizedBox(height: 40),
+
+                  // Info Text
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2196F3).withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(
+                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: const Color(0xFF2196F3),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            "Select an option to manage your attendance",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           
