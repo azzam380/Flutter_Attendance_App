@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:attendance_app/ui/home_screen.dart';
+import 'package:attendance_app/ui/home_screen.dart'; 
 
 class AbsentScreen extends StatefulWidget {
   const AbsentScreen({super.key});
@@ -19,32 +19,36 @@ class _AbsentScreenState extends State<AbsentScreen> {
   ];
 
   final controllerName = TextEditingController();
-  double dLat = 0.0, dLong = 0.0;
-  final CollectionReference dataCollection = FirebaseFirestore.instance
-      .collection('attendance');
+  final CollectionReference dataCollection = 
+      FirebaseFirestore.instance.collection('attendance');
 
-  int dateHours = 0, dateMinutes = 0;
   String dropValueCategories = "Please Choose:";
   final fromController = TextEditingController();
-  String strAlamat = '', strDate = '', strTime = '', strDateTime = '';
   final toController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  final Color primaryColor = const Color(0xFF2196F3);
+  final Color accentColor = const Color(0xFF9C27B0);
 
-  //show progress dialog
-  showLoaderDialog(BuildContext context) {
+  void showLoaderDialog(BuildContext context) {
     AlertDialog alert = AlertDialog(
-      content: Row(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
+      contentPadding: const EdgeInsets.all(24),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+            strokeWidth: 3,
           ),
-          Container(
-            margin: const EdgeInsets.only(left: 20),
-            child: const Text("Please Wait..."),
+          const SizedBox(height: 16),
+          Text(
+            "Submitting Request...",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: primaryColor,
+            ),
           ),
         ],
       ),
@@ -58,38 +62,30 @@ class _AbsentScreenState extends State<AbsentScreen> {
     );
   }
 
-  //submit data absent to firebase
   Future<void> submitAbsen(
     String nama,
     String keterangan,
     String from,
     String until,
   ) async {
-    // Validasi input sebelum mengirim ke Firebase
-    if (nama.isEmpty ||
-        keterangan == "Please Choose:" ||
-        from.isEmpty ||
-        until.isEmpty) {
+    if (nama.isEmpty || keterangan == "Please Choose:" || from.isEmpty || until.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 10),
-              Text(
-                "Pastikan semua data telah diisi!",
-                style: TextStyle(color: Colors.white),
-              ),
+              Icon(Icons.info_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Text("Please complete all fields!"),
             ],
           ),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
       return;
     }
 
-    // Menampilkan loader
     showLoaderDialog(context);
 
     try {
@@ -98,57 +94,218 @@ class _AbsentScreenState extends State<AbsentScreen> {
         'name': nama,
         'description': keterangan,
         'datetime': '$from - $until',
-        'created_at': FieldValue.serverTimestamp(), // Tambahkan timestamp
+        'created_at': FieldValue.serverTimestamp(),
       });
 
-      // Tutup loader sebelum menampilkan pesan sukses
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_outline, color: Colors.white),
-              SizedBox(width: 10),
-              Text(
-                "Yeay! Attendance Report Succeeded!",
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      // Kembali ke halaman utama
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } catch (e) {
-      // Jika terjadi error, tutup loader
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "Ups, terjadi kesalahan: $e",
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text("Request submitted successfully!"),
             ],
           ),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+
+      controllerName.clear();
+      fromController.clear();
+      toController.clear();
+      setState(() {
+        dropValueCategories = "Please Choose:";
+      });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } catch (e) {
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text("Error: ${e.toString()}")),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
+  }
+
+  Future<DateTime?> _selectDate(BuildContext context) async {
+    return await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String labelText,
+    required String hintText,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: Container(
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          border: Border(right: BorderSide(color: Colors.grey[300]!, width: 1)),
+        ),
+        child: Icon(icon, color: primaryColor.withOpacity(0.7)),
+      ),
+      labelStyle: TextStyle(fontSize: 16, color: primaryColor, fontWeight: FontWeight.w500),
+      hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: primaryColor, width: 2.0),
+      ),
+      filled: true,
+      fillColor: Colors.white,
+    );
+  }
+
+  Widget _buildDateInput({
+    required BuildContext context,
+    required String label,
+    required TextEditingController controller,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          readOnly: true,
+          controller: controller,
+          style: const TextStyle(color: Colors.black, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'Select Date',
+            hintStyle: const TextStyle(color: Colors.grey, fontSize: 16),
+            suffixIcon: Icon(Icons.calendar_today, color: primaryColor),
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+              borderSide: BorderSide(color: primaryColor, width: 2.0),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          onTap: () async {
+            DateTime? pickedDate = await _selectDate(context);
+            if (pickedDate != null) {
+              controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGradientButton({
+    required Size size,
+    required VoidCallback onTap,
+    required String text,
+  }) {
+    return Container(
+      width: size.width * 0.8,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2196F3),
+            Color(0xFF9C27B0),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(15),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.send, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -156,363 +313,220 @@ class _AbsentScreenState extends State<AbsentScreen> {
     Size size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FBFF),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color.fromARGB(255, 26, 0, 143),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF2196F3),
+                Color(0xFF9C27B0),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
         title: const Text(
-          "Permission Request Menu",
+          "Permission Request",
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
-        child: Card(
-          color: Colors.white,
-          margin: const EdgeInsets.fromLTRB(10, 10, 10, 30),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          elevation: 5,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 50,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                  ),
-                  color: Colors.blueAccent,
+              // Main Card
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                elevation: 15,
+                shadowColor: Colors.blue.withOpacity(0.1),
+                color: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(width: 12),
-                    Icon(Icons.maps_home_work_outlined, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text(
-                      "Please Fill out the Form!",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                        gradient: LinearGradient(
+                          colors: [primaryColor.withOpacity(0.9), accentColor.withOpacity(0.9)],
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.assignment_turned_in, color: Colors.white, size: 28),
+                          SizedBox(width: 12),
+                          Text(
+                            "Permission Request Form",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Name Input
+                          TextField(
+                            textInputAction: TextInputAction.next,
+                            keyboardType: TextInputType.text,
+                            controller: controllerName,
+                            decoration: _inputDecoration(
+                              labelText: "Your Name",
+                              hintText: "Enter your full name",
+                              icon: Icons.person_outline,
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+
+                          // Reason Dropdown
+                          Text(
+                            "Reason for Absence",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.grey[300]!),
+                              color: Colors.white,
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: dropValueCategories,
+                                onChanged: (value) {
+                                  setState(() {
+                                    dropValueCategories = value.toString();
+                                  });
+                                },
+                                items: categoriesList.map((value) {
+                                  return DropdownMenuItem(
+                                    value: value,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(
+                                        value,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: value == "Please Choose:"
+                                              ? Colors.grey[600]
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                icon: Icon(Icons.arrow_drop_down, color: primaryColor),
+                                isExpanded: true,
+                                dropdownColor: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+
+                          // Date Range
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDateInput(
+                                  context: context,
+                                  label: "From Date",
+                                  controller: fromController,
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: _buildDateInput(
+                                  context: context,
+                                  label: "Until Date",
+                                  controller: toController,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Submit Button
+                          Center(
+                            child: _buildGradientButton(
+                              size: size,
+                              onTap: () {
+                                submitAbsen(
+                                  controllerName.text.trim(),
+                                  dropValueCategories,
+                                  fromController.text,
+                                  toController.text,
+                                );
+                              },
+                              text: "Submit Request",
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                child: TextField(
-                  textInputAction: TextInputAction.next,
-                  keyboardType: TextInputType.text,
-                  controller: controllerName,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                    labelText: "Your Name",
-                    hintText: "Please enter your name",
-                    hintStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                    labelStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.blueAccent),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.blueAccent),
-                    ),
-                  ),
+
+              // Info Card
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: primaryColor.withOpacity(0.1)),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
-                child: Text(
-                  "Description",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.blueAccent,
-                      style: BorderStyle.solid,
-                      width: 1,
-                    ),
-                  ),
-                  child: DropdownButton(
-                    dropdownColor: Colors.white,
-                    value: dropValueCategories,
-                    onChanged: (value) {
-                      setState(() {
-                        dropValueCategories = value.toString();
-                      });
-                    },
-                    items:
-                        categoriesList.map((value) {
-                          return DropdownMenuItem(
-                            value: value.toString(),
-                            child: Text(
-                              value.toString(),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                    icon: const Icon(Icons.arrow_drop_down),
-                    iconSize: 24,
-                    elevation: 16,
-                    style: const TextStyle(color: Colors.black, fontSize: 14),
-                    underline: Container(height: 2, color: Colors.transparent),
-                    isExpanded: true,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: Row(
                   children: [
+                    Icon(Icons.info_outline, color: primaryColor, size: 20),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Row(
-                        children: [
-                          const Text(
-                            "From: ",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Expanded(
-                            child: TextField(
-                              readOnly: true,
-                              onTap: () async {
-                                DateTime? pickedDate = await showDatePicker(
-                                  builder: (
-                                    BuildContext context,
-                                    Widget? child,
-                                  ) {
-                                    return Theme(
-                                      data: Theme.of(context).copyWith(
-                                        colorScheme: const ColorScheme.light(
-                                          onPrimary: Colors.white,
-                                          onSurface: Colors.white,
-                                          primary: Colors.blueAccent,
-                                        ),
-                                        datePickerTheme:
-                                            const DatePickerThemeData(
-                                              headerBackgroundColor:
-                                                  Colors.blueAccent,
-                                              backgroundColor: Color.fromARGB(
-                                                255,
-                                                0,
-                                                0,
-                                                0,
-                                              ),
-                                              headerForegroundColor:
-                                                  Colors.white,
-                                              surfaceTintColor: Colors.white,
-                                            ),
-                                      ),
-                                      child: child!,
-                                    );
-                                  },
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime(9999),
-                                );
-                                if (pickedDate != null) {
-                                  fromController.text = DateFormat(
-                                    'dd/M/yyyy',
-                                  ).format(pickedDate);
-                                }
-                              },
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                              ),
-                              controller: fromController,
-                              decoration: const InputDecoration(
-                                contentPadding: EdgeInsets.all(8),
-                                hintText: "Starting From",
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Text(
-                            "Until: ",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Expanded(
-                            child: TextField(
-                              readOnly: true,
-                              onTap: () async {
-                                DateTime? pickedDate = await showDatePicker(
-                                  builder: (
-                                    BuildContext context,
-                                    Widget? widget,
-                                  ) {
-                                    return Theme(
-                                      data: Theme.of(context).copyWith(
-                                        colorScheme: const ColorScheme.light(
-                                          onPrimary: Colors.white,
-                                          onSurface: Colors.white,
-                                          primary: Colors.blueAccent,
-                                        ),
-                                        datePickerTheme:
-                                            const DatePickerThemeData(
-                                              headerBackgroundColor:
-                                                  Colors.blueAccent,
-                                              backgroundColor: Color.fromARGB(
-                                                255,
-                                                0,
-                                                0,
-                                                0,
-                                              ),
-                                              headerForegroundColor:
-                                                  Colors.white,
-                                              surfaceTintColor: Colors.white,
-                                            ),
-                                      ),
-                                      child: widget!,
-                                    );
-                                  },
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(1900),
-                                  lastDate: DateTime(9999),
-                                );
-                                if (pickedDate != null) {
-                                  toController.text = DateFormat(
-                                    'dd/M/yyyy',
-                                  ).format(pickedDate);
-                                }
-                              },
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                              ),
-                              controller: toController,
-                              decoration: const InputDecoration(
-                                contentPadding: EdgeInsets.all(8),
-                                hintText: "Until",
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                alignment: Alignment.center,
-                margin: const EdgeInsets.all(30),
-                child: Material(
-                  elevation: 3,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: size.width,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.white,
-                    ),
-                    child: Material(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.blueAccent,
-                      child: InkWell(
-                        splashColor: Colors.blue,
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () {
-                          if (controllerName.text.isEmpty ||
-                              dropValueCategories == "Please Choose:" ||
-                              fromController.text.isEmpty ||
-                              toController.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.info_outline,
-                                      color: Colors.white,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      "Ups, please fill the form!",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                                backgroundColor: Colors.blueAccent,
-                                shape: StadiumBorder(),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          } else {
-                            submitAbsen(
-                              controllerName.text.toString(),
-                              dropValueCategories.toString(),
-                              fromController.text,
-                              toController.text,
-                            );
-                          }
-                        },
-                        child: const Center(
-                          child: Text(
-                            "Make a Request",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      child: Text(
+                        "Your request will be reviewed by HR. Please ensure all information is accurate.",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
