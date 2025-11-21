@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:attendance_app/attend/camera_screen.dart';
 import 'package:attendance_app/ui/home_screen.dart';
+import 'package:attendance_app/absent/absent_screen.dart';
+import 'package:attendance_app/attendance_history/attendance_history_screen.dart'; // Buka komen jika file sudah ada
 
 class AttendScreen extends StatefulWidget {
   final XFile? image;
@@ -21,6 +23,10 @@ class AttendScreen extends StatefulWidget {
 class _AttendScreenState extends State<AttendScreen> {
   _AttendScreenState(this.image);
 
+  // -- Variabel Navbar --
+  int _currentIndex = 1; // Index 1 karena ini halaman Attendance
+
+  // -- Variabel Logic --
   XFile? image;
   String strAlamat = "",
       strDate = "",
@@ -250,7 +256,7 @@ class _AttendScreenState extends State<AttendScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Card Header
+                      // Card Header Gradient
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                         decoration: BoxDecoration(
@@ -264,7 +270,7 @@ class _AttendScreenState extends State<AttendScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.fingerprint, color: Colors.white, size: 28),
+                            const Icon(Icons.fingerprint, color: Colors.white, size: 28),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -515,6 +521,62 @@ class _AttendScreenState extends State<AttendScreen> {
           ),
         ),
       ),
+
+      // -- NAVBAR DITAMBAHKAN DI SINI --
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == _currentIndex) return;
+          
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+              break;
+            case 1:
+              // Halaman ini (Attendance)
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AttendanceHistoryScreen()),
+              );
+              break;
+            case 3:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AbsentScreen()),
+              );
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.fingerprint),
+            label: 'Attendance',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+        ],
+        selectedItemColor: const Color(0xFF2196F3),
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 10,
+      ),
     );
   }
 
@@ -556,7 +618,7 @@ class _AttendScreenState extends State<AttendScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: [
+            children: const [
               Icon(Icons.warning_amber, color: Colors.white),
               SizedBox(width: 12),
               Expanded(
@@ -591,7 +653,7 @@ class _AttendScreenState extends State<AttendScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: [
+            children: const [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 12),
               Text("Attendance submitted successfully!"),
@@ -614,8 +676,8 @@ class _AttendScreenState extends State<AttendScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 12),
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
               Expanded(child: Text("Submission failed: $error")),
             ],
           ),
@@ -627,7 +689,7 @@ class _AttendScreenState extends State<AttendScreen> {
     }
   }
 
-  // Location and Time Methods (keep the same implementation as before)
+  // Location and Time Methods
   Future<void> getGeoLocationPosition() async {
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.low,
@@ -679,8 +741,8 @@ class _AttendScreenState extends State<AttendScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.location_off, color: Colors.white),
-            SizedBox(width: 12),
+            const Icon(Icons.location_off, color: Colors.white),
+            const SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
         ),

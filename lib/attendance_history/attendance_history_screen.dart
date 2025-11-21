@@ -1,6 +1,10 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:attendance_app/ui/home_screen.dart';
+import 'package:attendance_app/attend/attend_screen.dart';
+import 'package:attendance_app/absent/absent_screen.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -11,11 +15,73 @@ class AttendanceHistoryScreen extends StatefulWidget {
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
+  // -- Variabel Navbar --
+  int _currentIndex = 2; // Index 2 karena ini halaman History
+
+  // -- Variabel Logic Asli --
   final CollectionReference dataCollection = 
       FirebaseFirestore.instance.collection('attendance');
 
   final Color primaryColor = const Color(0xFF2196F3);
   final Color accentColor = const Color(0xFF9C27B0);
+
+  // Date picker function
+  Future<void> _selectDateRange(BuildContext context, Function(DateTime?, DateTime?) onDateSelected) async {
+    DateTime? startDate;
+    DateTime? endDate;
+
+    // Select start date
+    final DateTime? pickedStart = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedStart != null) {
+      startDate = pickedStart;
+      
+      // Select end date
+      final DateTime? pickedEnd = await showDatePicker(
+        context: context,
+        initialDate: pickedStart.add(const Duration(days: 1)),
+        firstDate: pickedStart,
+        lastDate: DateTime(2030),
+        builder: (BuildContext context, Widget? child) {
+          return Theme(
+            data: ThemeData.light().copyWith(
+              colorScheme: ColorScheme.light(
+                primary: primaryColor,
+                onPrimary: Colors.white,
+                onSurface: Colors.black,
+              ),
+              dialogBackgroundColor: Colors.white,
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedEnd != null) {
+        endDate = pickedEnd;
+      }
+    }
+
+    onDateSelected(startDate, endDate);
+  }
 
   void _showElegantDialog({
     required BuildContext context,
@@ -109,9 +175,56 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               decoration: inputDecoration(labelText: "Description", icon: Icons.description),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: datetimeController,
-              decoration: inputDecoration(labelText: "Datetime Range", icon: Icons.calendar_today),
+            
+            // Date Range Picker Section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Datetime Range",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: primaryColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.calendar_today, color: primaryColor),
+                    title: Text(
+                      datetimeController.text.isEmpty ? "Select date range" : datetimeController.text,
+                      style: TextStyle(
+                        color: datetimeController.text.isEmpty ? Colors.grey : Colors.black,
+                      ),
+                    ),
+                    trailing: Icon(Icons.arrow_drop_down, color: primaryColor),
+                    onTap: () {
+                      _selectDateRange(context, (startDate, endDate) {
+                        if (startDate != null && endDate != null) {
+                          final dateFormat = DateFormat('dd/MM/yyyy');
+                          final startFormatted = dateFormat.format(startDate);
+                          final endFormatted = dateFormat.format(endDate);
+                          datetimeController.text = '$startFormatted - $endFormatted';
+                          setState(() {});
+                        }
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Tap to select start and end dates",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -158,7 +271,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     content: Row(
                       children: const [
                         Icon(Icons.check_circle, color: Colors.white),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text("Record updated successfully!"),
                       ],
                     ),
@@ -230,7 +343,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     content: Row(
                       children: const [
                         Icon(Icons.delete, color: Colors.white),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text("Record deleted successfully!"),
                       ],
                     ),
@@ -266,12 +379,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   Widget _buildDetailRow(IconData icon, String text, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6.0), // Increased padding for better spacing
+      padding: const EdgeInsets.only(top: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: color),
-          const SizedBox(width: 10), // Increased spacing from 8 to 10
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
@@ -509,7 +622,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                           statusIcon,
                                           style: const TextStyle(fontSize: 12),
                                         ),
-                                        const SizedBox(width: 6), // Added spacing between icon and text
+                                        const SizedBox(width: 6),
                                         Text(
                                           description,
                                           style: TextStyle(
@@ -523,12 +636,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10), // Increased spacing
+                              const SizedBox(height: 10),
                               _buildDetailRow(Icons.short_text, description, Colors.grey[600]!),
-                              const SizedBox(height: 6), // Added extra spacing between rows
+                              const SizedBox(height: 6),
                               _buildDetailRow(Icons.access_time, datetime, Colors.grey[600]!),
                               if (address != '-') ...[
-                                const SizedBox(height: 6), // Added extra spacing between rows
+                                const SizedBox(height: 6),
                                 _buildDetailRow(Icons.location_on, address, Colors.grey[600]!),
                               ],
                             ],
@@ -536,7 +649,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         ),
 
                         // Action Buttons with increased spacing
-                        const SizedBox(width: 12), // Added spacing before action buttons
+                        const SizedBox(width: 12),
                         Column(
                           children: [
                             Container(
@@ -550,10 +663,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 icon: const Icon(Icons.edit, color: Colors.white, size: 20),
                                 onPressed: () => _editData(docId, name, address, description, datetime),
                                 tooltip: 'Edit Record',
-                                padding: const EdgeInsets.all(8), // Added padding for better touch area
+                                padding: const EdgeInsets.all(8),
                               ),
                             ),
-                            const SizedBox(height: 12), // Increased spacing between buttons
+                            const SizedBox(height: 12),
                             Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
@@ -565,7 +678,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 icon: const Icon(Icons.delete, color: Colors.white, size: 20),
                                 onPressed: () => _deleteData(docId),
                                 tooltip: 'Delete Record',
-                                padding: const EdgeInsets.all(8), // Added padding for better touch area
+                                padding: const EdgeInsets.all(8),
                               ),
                             ),
                           ],
@@ -578,6 +691,62 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             },
           );
         },
+      ),
+
+      // -- NAVBAR DITAMBAHKAN DI SINI --
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index == _currentIndex) return;
+          
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+              break;
+            case 1:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AttendScreen()),
+              );
+              break;
+            case 2:
+              // Halaman ini (History)
+              break;
+            case 3:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AbsentScreen()),
+              );
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.fingerprint),
+            label: 'Attendance',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Requests',
+          ),
+        ],
+        selectedItemColor: const Color(0xFF2196F3),
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 10,
       ),
     );
   }
